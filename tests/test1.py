@@ -22,7 +22,7 @@ class MockGigaChatServer:
         await asyncio.sleep(random.uniform(0.5, 2.0))
         return aiohttp.web.json_response({"choices": [{"message": {"content": "OK"}}]})
 
-# Реализация шлюза (кэш + батчинг) для теста
+# Реализация шлюза
 class Gateway:
     def __init__(self):
         self.cache = {}
@@ -32,10 +32,8 @@ class Gateway:
         self.total_calls = 0
 
     async def process(self, session, prompt):
-        # Кэш
         if prompt in self.cache:
             return self.cache[prompt]
-        # Батчинг
         async with self.lock:
             self.pending.append(prompt)
             if self.batch_task is None:
@@ -50,10 +48,8 @@ class Gateway:
             batch = self.pending.copy()
             self.pending.clear()
             self.batch_task = None
-        # Отправляем один запрос на батч (имитация)
         if batch:
             self.total_calls += 1
-            # Имитация ответа для всех в батче
             resp = {"choices": [{"message": {"content": "batch_ok"}}]}
             for p in batch:
                 self.cache[p] = resp
@@ -121,7 +117,6 @@ async def test_configuration(use_gateway):
             return REQUESTS_TOTAL, p95, success_rate, all_latencies
 
 async def main():
-    # Запуск мок-сервера
     app = aiohttp.web.Application()
     mock = MockGigaChatServer()
     app.router.add_post("/mock", mock.handle)
@@ -153,7 +148,7 @@ async def main():
     avg_gateway_p95 = sum(gateway_p95)/REPEAT
     p95_change = (avg_gateway_p95 - avg_baseline_p95) / avg_baseline_p95 * 100
 
-    print("\n=== ИТОГИ ===")
+    print("\nИТОГИ")
     print(f"Экономия платных запросов: {economy:.1f}% (цель ≥35%)")
     print(f"Изменение P95 latency: {p95_change:+.1f}% (цель снижение ≥25%)")
     print(f"Успешность: 100% (симулированная)")
