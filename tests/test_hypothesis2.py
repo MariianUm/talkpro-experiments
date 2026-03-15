@@ -5,10 +5,8 @@ import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
-# Загружаем переменные окружения
 load_dotenv()
 
-# Импортируем ваши классы
 from yandex_calendar.queue_client import YandexCalendarQueueClient
 from yandex_calendar.yandex_calendar_real import YandexCalendarRealClient
 
@@ -24,7 +22,7 @@ async def test_real_calendar():
         return False
 
     print(f"Использую email: {email}")
-    print("Проверяем учётные данные...")
+    print("Проверяем учётные данные")
     
     try:
         real_client = YandexCalendarRealClient(email, app_password)
@@ -38,7 +36,7 @@ async def test_real_calendar():
             description="Проверка",
             location="Онлайн"
         )
-        print(f" Событие создано! ID: {result.get('event_id')}")
+        print(f" Событие создано. ID: {result.get('event_id')}")
         await real_client.close()
         return True
     except Exception as e:
@@ -48,7 +46,6 @@ async def test_real_calendar():
 
 # 2. Тест отказоустойчивости (с мок-клиентом)
 class FlakyMockClient:
-    """Мок-клиент, который иногда ошибается (для теста retry)"""
     def __init__(self, fail_probability=0.1):
         self.fail_probability = fail_probability
         self.call_count = 0
@@ -71,7 +68,7 @@ async def test_fault_tolerance():
     print("="*60)
     
     # Синхронный подход (без retry)
-    print("\n--- Синхронный подход (без retry) ---")
+    print("\n Синхронный подход (без retry)")
     flaky = FlakyMockClient(fail_probability=0.1)
     sync_results = []
     for i in range(10):
@@ -87,7 +84,7 @@ async def test_fault_tolerance():
     print(f"Итог: {sync_success}/10 успешно")
     
     # Асинхронный с очередью и retry
-    print("\n--- Асинхронный подход (с очередью и retry) ---")
+    print("\n Асинхронный подход (с очередью и retry)")
     flaky2 = FlakyMockClient(fail_probability=0.1)
     queue_client = YandexCalendarQueueClient(base_client=flaky2, max_retries=3, retry_delay=1)
     
