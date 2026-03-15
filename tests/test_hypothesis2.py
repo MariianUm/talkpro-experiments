@@ -12,7 +12,6 @@ load_dotenv()
 from yandex_calendar.queue_client import YandexCalendarQueueClient
 from yandex_calendar.yandex_calendar_real import YandexCalendarRealClient
 
-# ========== 1. Реальный тест (проверка учётных данных) ==========
 async def test_real_calendar():
     print("\n" + "="*60)
     print("ТЕСТ 1: Реальный Яндекс.Календарь")
@@ -27,10 +26,8 @@ async def test_real_calendar():
     print(f"Использую email: {email}")
     print("Проверяем учётные данные...")
     
-    # Проверим, что клиент работает
     try:
         real_client = YandexCalendarRealClient(email, app_password)
-        # Попробуем создать одно событие (не через очередь, а напрямую)
         start_time = (datetime.now() + timedelta(days=1)).isoformat()
         result = await real_client.create_interview_event(
             candidate_email="test@example.com",
@@ -49,7 +46,7 @@ async def test_real_calendar():
         print("Проверьте правильность email и пароля приложения в .env")
         return False
 
-# ========== 2. Тест отказоустойчивости (с мок-клиентом) ==========
+# 2. Тест отказоустойчивости (с мок-клиентом)
 class FlakyMockClient:
     """Мок-клиент, который иногда ошибается (для теста retry)"""
     def __init__(self, fail_probability=0.1):
@@ -112,13 +109,12 @@ async def test_fault_tolerance():
     
     return sync_success, async_success
 
-# ========== 3. Тест времени подтверждения ==========
+# 3. Тест времени подтверждения
 async def test_ack_time():
     print("\n" + "="*60)
     print("ТЕСТ 3: Время подтверждения пользователю")
     print("="*60)
     
-    # Используем мок-клиент без задержек, чтобы измерить только время помещения в очередь
     from yandex_calendar.mock_client import MockYandexCalendarClient
     mock_client = MockYandexCalendarClient()
     queue_client = YandexCalendarQueueClient(base_client=mock_client)
@@ -126,7 +122,6 @@ async def test_ack_time():
     times = []
     for i in range(10):
         start = time.time()
-        # Передаём обязательные аргументы (заглушки)
         await queue_client.create_interview_event(
             candidate_email=f"test{i}@example.com",
             interviewer_email="hr@company.ru",
@@ -142,24 +137,20 @@ async def test_ack_time():
     print(f"\n Среднее время подтверждения: {avg_time:.4f} сек (цель ≤2 сек)")
     return avg_time
 
-# ========== 4. Запуск ==========
+# 4. Запуск
 async def main():
     print(" НАЧАЛО ТЕСТИРОВАНИЯ ГИПОТЕЗЫ №2")
-    
-    # Сначала проверим, работают ли реальные учётные данные
     real_ok = await test_real_calendar()
     if not real_ok:
         print("\n Реальный тест пропущен из-за проблем с аутентификацией.")
-        print("Проверьте .env и повторите попытку.")
+        print("Проверь .env.")
         return
     
-    # Тест отказоустойчивости
+   
     sync_success, async_success = await test_fault_tolerance()
     
-    # Тест времени подтверждения
     ack_time = await test_ack_time()
     
-    # Вывод итогов
     print("\n" + "="*60)
     print("ИТОГОВЫЕ РЕЗУЛЬТАТЫ ПО ГИПОТЕЗЕ №2")
     print("="*60)
