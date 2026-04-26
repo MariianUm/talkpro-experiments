@@ -1,0 +1,37 @@
+services:
+  ai-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.ai
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  app-backend:
+    build:
+      context: ./frontend-backend/backend
+      dockerfile: Dockerfile
+    environment:
+      PORT: 3001
+      AI_SERVICE_URL: http://ai-service:8000
+      CORS_ORIGIN: http://localhost:3000
+    volumes:
+      - ./frontend-backend/backend/db.json:/app/db.json
+      - ./frontend-backend/backend/uploads:/app/uploads
+    depends_on:
+      - ai-service
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend-backend/frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - app-backend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
